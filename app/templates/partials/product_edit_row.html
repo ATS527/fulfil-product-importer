@@ -1,0 +1,27 @@
+<tr id="product-{{ product.sku }}">
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <p class="text-gray-900 whitespace-no-wrap">{{ product.sku }}</p>
+    </td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <input type="text" name="name" value="{{ product.name }}" class="w-full px-2 py-1 border rounded">
+    </td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <input type="text" name="description" value="{{ product.description }}" class="w-full px-2 py-1 border rounded">
+    </td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <select name="is_active" class="w-full px-2 py-1 border rounded">
+            <option value="true" {% if product.is_active %}selected{% endif %}>Active</option>
+            <option value="false" {% if not product.is_active %}selected{% endif %}>Inactive</option>
+        </select>
+    </td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <button hx-put="/products-ui/row/{{ product.sku }}" hx-include="closest tr"
+            hx-target="#product-{{ product.sku }}" hx-swap="outerHTML" class="text-green-600 hover:text-green-900 mr-2">
+            Save
+        </button>
+        <button hx-get="/products-ui/row/{{ product.sku }}" hx-target="#product-{{ product.sku }}" hx-swap="outerHTML"
+            class="text-gray-600 hover:text-gray-900">
+            Cancel
+        </button>
+    </td>
+</tr>

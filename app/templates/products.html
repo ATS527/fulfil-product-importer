@@ -5,10 +5,19 @@
     <div class="flex justify-between items-center mb-6">
         <h2 class="text-2xl font-bold text-gray-800">Product Dashboard</h2>
         <div class="flex space-x-2">
-            <input type="text" name="search" placeholder="Search by SKU or Name..."
+            <input type="text" name="search" placeholder="Search SKU, Name, Description..." value="{{ search or '' }}"
                 class="px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:border-blue-500"
                 hx-get="/products-ui" hx-trigger="keyup changed delay:500ms" hx-target="#product-table"
+                hx-include="[name='is_active']" hx-select="#product-table">
+
+            <select name="is_active"
+                class="px-3 py-2 border rounded-lg text-gray-700 focus:outline-none focus:border-blue-500"
+                hx-get="/products-ui" hx-trigger="change" hx-target="#product-table" hx-include="[name='search']"
                 hx-select="#product-table">
+                <option value="all">All Status</option>
+                <option value="true" {% if is_active=='true' %}selected{% endif %}>Active</option>
+                <option value="false" {% if is_active=='false' %}selected{% endif %}>Inactive</option>
+            </select>
             <button hx-delete="/api/products" hx-confirm="Are you sure you want to delete ALL products?"
                 class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-150">
                 Delete All
@@ -44,29 +53,7 @@
             </thead>
             <tbody>
                 {% for product in products %}
-                <tr>
-                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                        <p class="text-gray-900 whitespace-no-wrap">{{ product.sku }}</p>
-                    </td>
-                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                        <p class="text-gray-900 whitespace-no-wrap">{{ product.name }}</p>
-                    </td>
-                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                        <p class="text-gray-900 whitespace-no-wrap">{{ product.description }}</p>
-                    </td>
-                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                        <span class="relative inline-block px-3 py-1 font-semibold text-green-900 leading-tight">
-                            <span aria-hidden class="absolute inset-0 bg-green-200 opacity-50 rounded-full"></span>
-                            <span class="relative">{{ "Active" if product.is_active else "Inactive" }}</span>
-                        </span>
-                    </td>
-                    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-                        <button hx-delete="/api/products/{{ product.sku }}" hx-confirm="Delete {{ product.sku }}?"
-                            hx-target="closest tr" hx-swap="outerHTML" class="text-red-600 hover:text-red-900">
-                            Delete
-                        </button>
-                    </td>
-                </tr>
+                {% include "partials/product_row.html" %}
                 {% endfor %}
             </tbody>
         </table>
