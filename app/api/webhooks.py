@@ -10,14 +10,12 @@ from app.schemas import WebhookCreate, WebhookResponse
 router = APIRouter()
 
 @router.get("/webhooks", response_model=List[WebhookResponse])
-async def list_webhooks():
-    db = get_db()
+async def list_webhooks(db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Webhook))
     return result.scalars().all()
 
 @router.post("/webhooks", response_model=WebhookResponse)
-async def create_webhook(webhook: WebhookCreate):
-    db = get_db()
+async def create_webhook(webhook: WebhookCreate, db: AsyncSession = Depends(get_db)):
     new_webhook = Webhook(**webhook.dict())
     db.add(new_webhook)
     await db.commit()
@@ -25,8 +23,7 @@ async def create_webhook(webhook: WebhookCreate):
     return new_webhook
 
 @router.delete("/webhooks/{webhook_id}")
-async def delete_webhook(webhook_id: int):
-    db = get_db()
+async def delete_webhook(webhook_id: int, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Webhook).filter(Webhook.id == webhook_id))
     webhook = result.scalars().first()
     if not webhook:

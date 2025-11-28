@@ -15,8 +15,8 @@ async def list_products(
     limit: int = 10,
     search: Optional[str] = None,
     is_active: Optional[bool] = None,
+    db: AsyncSession = Depends(get_db)
 ):
-    db = get_db()
     query = select(Product)
     
     if search:
@@ -35,8 +35,7 @@ async def list_products(
     return result.scalars().all()
 
 @router.post("/products", response_model=ProductResponse)
-async def create_product(product: ProductCreate):
-    db = get_db()
+async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_db)):
     # Check if SKU exists
     existing = await db.execute(select(Product).filter(Product.sku == product.sku))
     if existing.scalars().first():
@@ -49,8 +48,7 @@ async def create_product(product: ProductCreate):
     return new_product
 
 @router.get("/products/{sku}", response_model=ProductResponse)
-async def get_product(sku: str):
-    db = get_db()
+async def get_product(sku: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Product).filter(Product.sku == sku))
     product = result.scalars().first()
     if not product:
@@ -58,8 +56,7 @@ async def get_product(sku: str):
     return product
 
 @router.put("/products/{sku}", response_model=ProductResponse)
-async def update_product(sku: str, product_update: ProductUpdate):
-    db = get_db()
+async def update_product(sku: str, product_update: ProductUpdate, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Product).filter(Product.sku == sku))
     product = result.scalars().first()
     if not product:
@@ -74,8 +71,7 @@ async def update_product(sku: str, product_update: ProductUpdate):
     return product
 
 @router.delete("/products/{sku}")
-async def delete_product(sku: str):
-    db = get_db()
+async def delete_product(sku: str, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Product).filter(Product.sku == sku))
     product = result.scalars().first()
     if not product:
@@ -86,8 +82,8 @@ async def delete_product(sku: str):
     return {"message": "Product deleted successfully"}
 
 @router.delete("/products")
-async def delete_all_products():
-    db = get_db()
+async def delete_all_products(db: AsyncSession = Depends(get_db)):
+    # Using delete() instead of truncate for compatibility, though truncate is faster
     await db.execute(delete(Product))
     await db.commit()
     return {"message": "All products deleted successfully"}

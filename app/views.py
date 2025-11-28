@@ -13,16 +13,14 @@ async def index(request: Request):
     return templates.TemplateResponse("upload.html", {"request": request})
 
 @router.get("/products-ui")
-async def products_ui(request: Request, page: int = 1, limit: int = 20):
-    db = get_db()
+async def products_ui(request: Request, page: int = 1, limit: int = 20, db: AsyncSession = Depends(get_db)):
     offset = (page - 1) * limit
     result = await db.execute(select(Product).offset(offset).limit(limit))
     products = result.scalars().all()
     return templates.TemplateResponse("products.html", {"request": request, "products": products, "page": page})
 
 @router.get("/webhooks-ui")
-async def webhooks_ui(request: Request):
-    db = get_db()
+async def webhooks_ui(request: Request, db: AsyncSession = Depends(get_db)):
     result = await db.execute(select(Webhook))
     webhooks = result.scalars().all()
     return templates.TemplateResponse("webhooks.html", {"request": request, "webhooks": webhooks})
