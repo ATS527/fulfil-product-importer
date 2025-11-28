@@ -7,6 +7,9 @@ import ssl
 
 DATABASE_URL = settings.DATABASE_URL
 
+if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+
 connect_args = {}
 if settings.ENVIRONMENT == "production":
     ssl_context = ssl.create_default_context()
