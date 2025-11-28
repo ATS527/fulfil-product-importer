@@ -29,7 +29,7 @@ async def upload_products(file: UploadFile = File(...)):
 
     task = process_csv_upload.delay(file_path, task_id)
 
-    return {"task_id": task.id, "message": "File uploaded successfully. Processing started."}
+    return {"task_id": task_id, "message": "File uploaded successfully. Processing started."}
 
 @router.get("/progress/{task_id}")
 async def get_progress(task_id: str):

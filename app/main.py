@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from app.database import engine, Base
 import os
@@ -8,9 +7,6 @@ from app.api import upload, products, webhooks
 from app import views
 
 app = FastAPI(title="Product Importer")
-
-# Mount static files
-app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="app/templates")

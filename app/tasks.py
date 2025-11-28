@@ -65,7 +65,8 @@ def process_csv_upload(self, file_path: str, task_id: str):
 
     total_rows = 0
     with open(file_path, 'r') as f:
-        total_rows = sum(1 for line in f) - 1
+        reader = csv.DictReader(f)
+        total_rows = sum(1 for _ in reader)
 
     chunk_size = 1000
     processed_rows = 0
@@ -78,16 +79,22 @@ def process_csv_upload(self, file_path: str, task_id: str):
             chunk.append(row)
             
             if len(chunk) >= chunk_size:
-                loop.run_until_complete(upsert_chunk(chunk))
-                processed_rows += len(chunk)
+                # Deduplicate chunk to avoid CardinalityViolationError
+                # If multiple rows in the same chunk have the same SKU, the last one wins
+                deduplicated_chunk = list({r['sku']: r for r in chunk}.values())
+                
+                loop.run_until_complete(upsert_chunk(deduplicated_chunk))
+                processed_rows += len(chunk) # Count total rows processed from CSV, even if some were deduped
                 chunk = []
                 
                 progress = int((processed_rows / total_rows) * 100)
                 redis_client.set(f"progress:{task_id}", progress)
+                print(f"Updated progress for {task_id}: {progress}%")
                 self.update_state(state='PROGRESS', meta={'current': processed_rows, 'total': total_rows, 'percent': progress})
 
         if chunk:
-            loop.run_until_complete(upsert_chunk(chunk))
+            deduplicated_chunk = list({r['sku']: r for r in chunk}.values())
+            loop.run_until_complete(upsert_chunk(deduplicated_chunk))
             processed_rows += len(chunk)
             redis_client.set(f"progress:{task_id}", 100)
     
