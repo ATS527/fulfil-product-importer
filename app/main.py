@@ -5,6 +5,7 @@ from app.database import engine, Base
 import os
 
 from app.api import upload, products, webhooks
+from app import views
 
 app = FastAPI(title="Product Importer")
 
@@ -17,6 +18,7 @@ templates = Jinja2Templates(directory="app/templates")
 app.include_router(upload.router, prefix="/api")
 app.include_router(products.router, prefix="/api")
 app.include_router(webhooks.router, prefix="/api")
+app.include_router(views.router)
 
 @app.on_event("startup")
 async def startup():
