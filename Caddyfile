@@ -1,0 +1,7 @@
+{
+    email anug1035@gmail.com
+}
+
+fulfil-product-importer.vornixsolutions.com {
+    reverse_proxy web:8000
+}
