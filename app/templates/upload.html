@@ -59,6 +59,7 @@
         eventSource.onerror = function () {
             eventSource.close();
             showToast("Connection to progress server lost.", "error");
+            localStorage.removeItem('current_upload_task_id');
         };
     }
 

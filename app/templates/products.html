@@ -47,7 +47,8 @@
                 <option value="false" {% if is_active=='false' %}selected{% endif %}>Inactive</option>
             </select>
             <button hx-delete="/api/products" hx-confirm="Are you sure you want to delete ALL products?" hx-swap="none"
-                hx-on::after-request="if(event.detail.successful) { showToast('All products deleted successfully', 'success'); }"
+                hx-indicator="#delete-loading"
+                hx-on::after-request="if(event.detail.successful) { showToast('All products deleted successfully', 'success'); setTimeout(() => window.location.reload(), 1500); }"
                 class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition duration-150">
                 Delete All
             </button>
