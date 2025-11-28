@@ -1,0 +1,13 @@
+<tr>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ webhook.id }}</td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ webhook.url }}</td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ webhook.event_type }}</td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <span class="text-green-600 font-semibold">{{ "Active" if webhook.is_active else "Inactive" }}</span>
+    </td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <button hx-delete="/api/webhooks/{{ webhook.id }}" hx-confirm="Delete webhook {{ webhook.id }}?" hx-swap="none"
+            hx-on::after-request="if(event.detail.successful) { alert('Webhook deleted successfully'); event.target.closest('tr').remove(); }"
+            class="text-red-600 hover:text-red-900">Delete</button>
+    </td>
+</tr>

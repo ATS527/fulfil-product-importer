@@ -79,6 +79,11 @@ async def delete_product(sku: str, db: AsyncSession = Depends(get_db)):
     
     await db.delete(product)
     await db.commit()
+    
+    # Trigger webhook
+    from app.tasks import trigger_webhooks
+    trigger_webhooks.delay("product.deleted", {"sku": sku})
+    
     return {"message": "Product deleted successfully"}
 
 @router.delete("/products")
@@ -86,4 +91,9 @@ async def delete_all_products(db: AsyncSession = Depends(get_db)):
     # Using delete() instead of truncate for compatibility, though truncate is faster
     await db.execute(delete(Product))
     await db.commit()
+    
+    # Trigger webhook
+    from app.tasks import trigger_webhooks
+    trigger_webhooks.delay("product.deleted_all", {})
+    
     return {"message": "All products deleted successfully"}
