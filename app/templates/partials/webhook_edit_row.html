@@ -1,0 +1,34 @@
+<tr hx-target="this" hx-swap="outerHTML">
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">{{ webhook.id }}</td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <input type="url" name="url" value="{{ webhook.url }}" required
+            class="w-full px-2 py-1 border rounded text-gray-700 focus:outline-none focus:border-blue-500">
+    </td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <select name="event_type"
+            class="w-full px-2 py-1 border rounded text-gray-700 focus:outline-none focus:border-blue-500">
+            <option value="product.import_completed" {% if webhook.event_type=='product.import_completed' %}selected{%
+                endif %}>product.import_completed</option>
+            <option value="product.created" {% if webhook.event_type=='product.created' %}selected{% endif %}>
+                product.created</option>
+            <option value="product.updated" {% if webhook.event_type=='product.updated' %}selected{% endif %}>
+                product.updated</option>
+            <option value="product.deleted" {% if webhook.event_type=='product.deleted' %}selected{% endif %}>
+                product.deleted</option>
+            <option value="product.deleted_all" {% if webhook.event_type=='product.deleted_all' %}selected{% endif %}>
+                product.deleted_all</option>
+        </select>
+    </td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <select name="is_active"
+            class="w-full px-2 py-1 border rounded text-gray-700 focus:outline-none focus:border-blue-500">
+            <option value="true" {% if webhook.is_active %}selected{% endif %}>Active</option>
+            <option value="false" {% if not webhook.is_active %}selected{% endif %}>Inactive</option>
+        </select>
+    </td>
+    <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
+        <button hx-put="/webhooks-ui/row/{{ webhook.id }}" hx-include="closest tr"
+            class="text-blue-600 hover:text-blue-900 mr-2">Save</button>
+        <button hx-get="/webhooks-ui/row/{{ webhook.id }}" class="text-gray-600 hover:text-gray-900">Cancel</button>
+    </td>
+</tr>

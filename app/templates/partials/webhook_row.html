@@ -6,8 +6,17 @@
         <span class="text-green-600 font-semibold">{{ "Active" if webhook.is_active else "Inactive" }}</span>
     </td>
     <td class="px-5 py-5 border-b border-gray-200 bg-white text-sm">
-        <button hx-delete="/api/webhooks/{{ webhook.id }}" hx-confirm="Delete webhook {{ webhook.id }}?" hx-swap="none"
-            hx-on::after-request="if(event.detail.successful) { alert('Webhook deleted successfully'); event.target.closest('tr').remove(); }"
-            class="text-red-600 hover:text-red-900">Delete</button>
+        <div class="flex items-center">
+            <button hx-post="/api/webhooks/{{ webhook.id }}/test" hx-target="#test-result-{{ webhook.id }}"
+                hx-swap="innerHTML" class="text-purple-600 hover:text-purple-900 mr-2">Test</button>
+            <span id="test-result-{{ webhook.id }}"></span>
+
+            <button hx-get="/webhooks-ui/row/{{ webhook.id }}/edit" hx-target="closest tr" hx-swap="outerHTML"
+                class="text-blue-600 hover:text-blue-900 mr-2 ml-2">Edit</button>
+            <button hx-delete="/api/webhooks/{{ webhook.id }}" hx-confirm="Delete webhook {{ webhook.id }}?"
+                hx-swap="none"
+                hx-on::after-request="if(event.detail.successful) { alert('Webhook deleted successfully'); event.target.closest('tr').remove(); }"
+                class="text-red-600 hover:text-red-900">Delete</button>
+        </div>
     </td>
 </tr>
