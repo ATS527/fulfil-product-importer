@@ -92,4 +92,39 @@ def process_csv_upload(self, file_path: str, task_id: str):
             redis_client.set(f"progress:{task_id}", 100)
     
     os.remove(file_path)
+    
+    # Trigger webhooks after successful import
+    if processed_rows > 0:
+        trigger_webhooks.delay("product.import_completed", {"count": processed_rows})
+
     return {"status": "Completed", "total_processed": processed_rows}
+
+@celery_app.task
+def trigger_webhooks(event_type: str, payload: dict):
+    import requests
+    from app.database import AsyncSessionLocal
+    from app.models import Webhook
+    from sqlalchemy.future import select
+    
+    # Helper for async DB access in sync task
+    loop = asyncio.get_event_loop()
+    if loop.is_closed():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    async def get_active_webhooks():
+        async with AsyncSessionLocal() as session:
+            result = await session.execute(select(Webhook).filter(Webhook.event_type == event_type, Webhook.is_active == True))
+            return result.scalars().all()
+
+    webhooks = loop.run_until_complete(get_active_webhooks())
+    
+    results = []
+    for webhook in webhooks:
+        try:
+            response = requests.post(webhook.url, json=payload, timeout=5)
+            results.append({"url": webhook.url, "status": response.status_code})
+        except Exception as e:
+            results.append({"url": webhook.url, "error": str(e)})
+            
+    return results
