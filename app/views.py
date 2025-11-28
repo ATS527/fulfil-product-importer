@@ -92,4 +92,8 @@ async def update_product_row(
         await db.commit()
         await db.refresh(product)
         
+        # Trigger webhook
+        from app.tasks import trigger_webhooks
+        trigger_webhooks.delay("product.updated", {"sku": sku})
+        
     return templates.TemplateResponse("partials/product_row.html", {"request": request, "product": product})

@@ -34,18 +34,34 @@ async def list_products(
     result = await db.execute(query)
     return result.scalars().all()
 
-@router.post("/products", response_model=ProductResponse)
-async def create_product(product: ProductCreate, db: AsyncSession = Depends(get_db)):
+from fastapi import Form, Request
+from fastapi.templating import Jinja2Templates
+
+templates = Jinja2Templates(directory="app/templates")
+
+@router.post("/products")
+async def create_product(
+    request: Request,
+    sku: str = Form(...),
+    name: str = Form(...),
+    description: str = Form(None),
+    db: AsyncSession = Depends(get_db)
+):
     # Check if SKU exists
-    existing = await db.execute(select(Product).filter(Product.sku == product.sku))
+    existing = await db.execute(select(Product).filter(Product.sku == sku))
     if existing.scalars().first():
         raise HTTPException(status_code=400, detail="Product with this SKU already exists")
     
-    new_product = Product(**product.dict())
+    new_product = Product(sku=sku, name=name, description=description, is_active=True)
     db.add(new_product)
     await db.commit()
     await db.refresh(new_product)
-    return new_product
+    
+    # Trigger webhook
+    from app.tasks import trigger_webhooks
+    trigger_webhooks.delay("product.created", {"sku": sku})
+
+    return templates.TemplateResponse("partials/product_row.html", {"request": request, "product": new_product})
 
 @router.get("/products/{sku}", response_model=ProductResponse)
 async def get_product(sku: str, db: AsyncSession = Depends(get_db)):
@@ -68,6 +84,11 @@ async def update_product(sku: str, product_update: ProductUpdate, db: AsyncSessi
     
     await db.commit()
     await db.refresh(product)
+    
+    # Trigger webhook
+    from app.tasks import trigger_webhooks
+    trigger_webhooks.delay("product.updated", {"sku": sku})
+    
     return product
 
 @router.delete("/products/{sku}")
