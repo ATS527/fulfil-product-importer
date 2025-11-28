@@ -58,8 +58,7 @@
 
         eventSource.onerror = function () {
             eventSource.close();
-            // Optional: Check if task is actually done or failed via another API if needed
-            // For now, we assume if connection fails and we aren't at 100, we might want to keep retrying or just stop
+            showToast("Connection to progress server lost.", "error");
         };
     }
 
@@ -73,9 +72,13 @@
 
     document.body.addEventListener('htmx:afterRequest', function (evt) {
         if (evt.detail.elt.id === 'upload-form' && evt.detail.successful) {
-            const response = JSON.parse(evt.detail.xhr.response);
-            alert(response.message);
-            startProgressTracking(response.task_id);
+            try {
+                const response = JSON.parse(evt.detail.xhr.response);
+                showToast(response.message, 'success');
+                startProgressTracking(response.task_id);
+            } catch (e) {
+                showToast("Failed to parse server response", 'error');
+            }
         }
     });
 </script>

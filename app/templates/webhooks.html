@@ -6,7 +6,7 @@
 
     <!-- Create Webhook Form -->
     <form hx-post="/api/webhooks" hx-target="#webhook-list" hx-swap="beforeend"
-        hx-on::after-request="if(event.detail.successful) { alert('Webhook created successfully'); this.reset(); }"
+        hx-on::after-request="if(event.detail.successful) { showToast('Webhook created successfully', 'success'); this.reset(); }"
         class="mb-8 bg-gray-50 p-6 rounded-lg">
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>

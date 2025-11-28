@@ -20,7 +20,7 @@
             Edit
         </button>
         <button hx-delete="/api/products/{{ product.sku }}" hx-confirm="Delete {{ product.sku }}?" hx-swap="none"
-            hx-on::after-request="if(event.detail.successful) { alert('Product deleted successfully'); event.target.closest('tr').remove(); }"
+            hx-on::after-request="if(event.detail.successful) { showToast('Product deleted successfully', 'success'); event.target.closest('tr').remove(); }"
             class="text-red-600 hover:text-red-900">
             Delete
         </button>
