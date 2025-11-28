@@ -34,6 +34,13 @@ async def create_webhook(
     
     return templates.TemplateResponse("partials/webhook_row.html", {"request": request, "webhook": new_webhook})
 
+@router.delete("/webhooks/{webhook_id}")
+async def delete_webhook(webhook_id: int, db: AsyncSession = Depends(get_db)):
+    result = await db.execute(select(Webhook).filter(Webhook.id == webhook_id))
+    webhook = result.scalars().first()
+    if not webhook:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+
     await db.delete(webhook)
     await db.commit()
     return {"message": "Webhook deleted successfully"}
