@@ -4,8 +4,7 @@
 <div class="max-w-md mx-auto bg-white rounded-lg shadow-md p-8">
     <h2 class="text-2xl font-bold mb-6 text-gray-800">Upload Products CSV</h2>
 
-    <form id="upload-form" hx-encoding="multipart/form-data" hx-post="/api/upload" hx-target="#result"
-        hx-swap="innerHTML">
+    <form id="upload-form" hx-encoding="multipart/form-data" hx-post="/api/upload" hx-swap="none">
         <div class="mb-6">
             <label class="block text-gray-700 text-sm font-bold mb-2" for="file">
                 Select CSV File
@@ -33,35 +32,50 @@
 </div>
 
 <script>
+    function startProgressTracking(taskId) {
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        progressContainer.classList.remove('hidden');
+        localStorage.setItem('current_upload_task_id', taskId);
+
+        // Start SSE connection
+        const eventSource = new EventSource(`/api/progress/${taskId}`);
+
+        eventSource.onmessage = function (event) {
+            const progress = parseInt(event.data);
+            progressBar.style.width = `${progress}%`;
+            progressText.innerText = `${progress}%`;
+
+            if (progress >= 100) {
+                eventSource.close();
+                progressText.innerText = "Upload Complete!";
+                progressText.classList.add("text-green-600", "font-bold");
+                localStorage.removeItem('current_upload_task_id');
+            }
+        };
+
+        eventSource.onerror = function () {
+            eventSource.close();
+            // Optional: Check if task is actually done or failed via another API if needed
+            // For now, we assume if connection fails and we aren't at 100, we might want to keep retrying or just stop
+        };
+    }
+
+    // Check for existing task on load
+    document.addEventListener('DOMContentLoaded', function () {
+        const savedTaskId = localStorage.getItem('current_upload_task_id');
+        if (savedTaskId) {
+            startProgressTracking(savedTaskId);
+        }
+    });
+
     document.body.addEventListener('htmx:afterRequest', function (evt) {
         if (evt.detail.elt.id === 'upload-form' && evt.detail.successful) {
             const response = JSON.parse(evt.detail.xhr.response);
-            const taskId = response.task_id;
-
-            const progressContainer = document.getElementById('progress-container');
-            const progressBar = document.getElementById('progress-bar');
-            const progressText = document.getElementById('progress-text');
-
-            progressContainer.classList.remove('hidden');
-
-            // Start SSE connection
-            const eventSource = new EventSource(`/api/progress/${taskId}`);
-
-            eventSource.onmessage = function (event) {
-                const progress = parseInt(event.data);
-                progressBar.style.width = `${progress}%`;
-                progressText.innerText = `${progress}%`;
-
-                if (progress >= 100) {
-                    eventSource.close();
-                    progressText.innerText = "Upload Complete!";
-                    progressText.classList.add("text-green-600", "font-bold");
-                }
-            };
-
-            eventSource.onerror = function () {
-                eventSource.close();
-            };
+            alert(response.message);
+            startProgressTracking(response.task_id);
         }
     });
 </script>

@@ -19,8 +19,9 @@
             hx-swap="outerHTML" class="text-blue-600 hover:text-blue-900 mr-2">
             Edit
         </button>
-        <button hx-delete="/api/products/{{ product.sku }}" hx-confirm="Delete {{ product.sku }}?"
-            hx-target="closest tr" hx-swap="outerHTML" class="text-red-600 hover:text-red-900">
+        <button hx-delete="/api/products/{{ product.sku }}" hx-confirm="Delete {{ product.sku }}?" hx-swap="none"
+            hx-on::after-request="if(event.detail.successful) { alert('Product deleted successfully'); event.target.closest('tr').remove(); }"
+            class="text-red-600 hover:text-red-900">
             Delete
         </button>
     </td>
