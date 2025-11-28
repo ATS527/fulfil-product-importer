@@ -4,6 +4,8 @@ from fastapi.templating import Jinja2Templates
 from app.database import engine, Base
 import os
 
+from app.api import upload
+
 app = FastAPI(title="Product Importer")
 
 # Mount static files
@@ -11,6 +13,8 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
 # Templates
 templates = Jinja2Templates(directory="app/templates")
+
+app.include_router(upload.router, prefix="/api")
 
 @app.on_event("startup")
 async def startup():

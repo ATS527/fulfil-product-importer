@@ -1,8 +1,19 @@
 from celery import Celery
 import os
+import csv
+import asyncio
+from app.database import AsyncSessionLocal
+from app.models import Product
+from sqlalchemy.future import select
+from sqlalchemy.dialects.postgresql import insert
+import redis
+import json
+from sqlalchemy.sql import func
 
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/0")
+from app.config import settings
+
+CELERY_BROKER_URL = settings.CELERY_BROKER_URL
+CELERY_RESULT_BACKEND = settings.CELERY_RESULT_BACKEND
 
 celery_app = Celery(
     "worker",
@@ -18,6 +29,67 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
-@celery_app.task
-def example_task(word: str):
-    return f"Hello {word}"
+redis_client = redis.Redis.from_url(CELERY_BROKER_URL)
+
+async def upsert_chunk(chunk):
+    async with AsyncSessionLocal() as session:
+        values = [
+            {
+                "sku": row["sku"],
+                "name": row["name"],
+                "description": row["description"],
+                "is_active": str(row.get("is_active", "true")).lower() == "true"
+            }
+            for row in chunk
+        ]
+        
+        stmt = insert(Product).values(values)
+        stmt = stmt.on_conflict_do_update(
+            index_elements=['sku'],
+            set_={
+                "name": stmt.excluded.name,
+                "description": stmt.excluded.description,
+                "is_active": stmt.excluded.is_active,
+                "updated_at": func.now()
+            }
+        )
+        await session.execute(stmt)
+        await session.commit()
+
+@celery_app.task(bind=True)
+def process_csv_upload(self, file_path: str, task_id: str):
+    loop = asyncio.get_event_loop()
+    if loop.is_closed():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+
+    total_rows = 0
+    with open(file_path, 'r') as f:
+        total_rows = sum(1 for line in f) - 1
+
+    chunk_size = 1000
+    processed_rows = 0
+    
+    with open(file_path, 'r') as f:
+        reader = csv.DictReader(f)
+        chunk = []
+        for row in reader:
+            row['sku'] = row['sku'].lower()
+            chunk.append(row)
+            
+            if len(chunk) >= chunk_size:
+                loop.run_until_complete(upsert_chunk(chunk))
+                processed_rows += len(chunk)
+                chunk = []
+                
+                progress = int((processed_rows / total_rows) * 100)
+                redis_client.set(f"progress:{task_id}", progress)
+                self.update_state(state='PROGRESS', meta={'current': processed_rows, 'total': total_rows, 'percent': progress})
+
+        if chunk:
+            loop.run_until_complete(upsert_chunk(chunk))
+            processed_rows += len(chunk)
+            redis_client.set(f"progress:{task_id}", 100)
+    
+    os.remove(file_path)
+    return {"status": "Completed", "total_processed": processed_rows}
